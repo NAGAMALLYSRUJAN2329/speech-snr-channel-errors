@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-Encoding Simulator</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient-1: #312e81;
+            --bg-gradient-2: #8b5cf6;
+            --bg-gradient-3: #ec4899;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-main: #ffffff;
+            --text-muted: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #f3f4f6;
+        }
+
+        input[type="text"], select, input[type="file"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, select:focus, input[type="file"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        select option {
+            background-color: #1e1b4b;
+            color: white;
+        }
+        
+        input[type="file"]::file-selector-button {
+            border: none;
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        button.simulate-btn {
+            background: linear-gradient(135deg, var(--primary), var(--bg-gradient-3));
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        button.simulate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        button.simulate-btn:active {
+            transform: translateY(1px);
+        }
+
+        .plot-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            min-height: 400px;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .plot-img {
+            max-width: 100%;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .placeholder-text {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+            position: absolute;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* File Upload Animation */
+        #audio_file_group {
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(-10px);
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        #audio_file_group.active {
+            opacity: 1;
+            transform: translateY(0);
+            height: auto;
+            pointer-events: auto;
+            margin-top: 0.5rem;
+        }
+
+        .alpha-table {
+            width: 100%;
+            margin-top: 1.5rem;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            display: none;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .alpha-table th, .alpha-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .alpha-table th {
+            background: rgba(255,255,255,0.1);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .plot-section { min-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Speech-Encoding Simulation</h1>
+            <p>Interactive Noll (1975) SNR performance bounds mapped against practical variables.</p>
+        </div>
+
+        <form id="simForm" class="form-section">
+            
+            <div class="input-group">
+                <label for="scheme">Encoder Scheme</label>
+                <select id="scheme" name="scheme">
+                    <option value="PCM">PCM (Nonadaptive)</option>
+                    <option value="PCM-AQF" selected>PCM-AQF (Adaptive Quantization)</option>
+                    <option value="DPCM1-AQF">DPCM1-AQF (1-tap Differential)</option>
+                    <option value="ADPCM1-AQF">ADPCM1-AQF (Adaptive 1-tap)</option>
+                    <option value="ADPCM4-AQF">ADPCM4-AQF (Dynamic 4-tap Yule-Walker)</option>
+                </select>
+            </div>
+
+            <div class="input-group" id="h1_group" style="display: none; transition: all 0.3s ease;">
+                <label for="h1_val">h1 Parameter (DPCM1-AQF only)</label>
+                <input type="text" id="h1_val" name="h1_val" value="0.85">
+            </div>
+
+            <div class="input-group">
+                <label for="rates">Bit Error Rates $P$ (comma separated)</label>
+                <input type="text" id="rates" name="rates" value="0, 0.01, 0.02, 0.03, 0.04, 0.05">
+            </div>
+
+            <div class="input-group">
+                <label>Signal Origin</label>
+                <select id="signal_type" name="signal_type">
+                    <option value="synthetic">Synthetic AR(1) Sequence</option>
+                    <option value="upload">Upload Custom MP3/WAV</option>
+                </select>
+            </div>
+
+            <div id="audio_file_group">
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label for="audio_file">Select Audio File</label>
+                    <input type="file" id="audio_file" name="audio_file" accept=".mp3, .wav">
+                </div>
+                <div class="input-group">
+                    <label for="duration_type">Duration to Process</label>
+                    <select id="duration_type" name="duration_type">
+                        <option value="1">1 Second snippet</option>
+                        <option value="2" selected>2 Second snippet</option>
+                        <option value="3">3 Second snippet</option>
+                        <option value="5">5 Second snippet</option>
+                        <option value="10">10 Second snippet</option>
+                        <option value="whole">Whole File (Warning: Slow!)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Plot Error Protection (EP) Variations</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" name="ep_noep" value="true" checked> No EP
+                    </label>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" name="ep_1" value="true" checked> EP1 (MSB)
+                    </label>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" name="ep_2" value="true" checked> EP2 (2-MSB)
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="simulate-btn">Simulate Channel & Plot SNR</button>
+        </form>
+
+        <div class="plot-section">
+            <div class="placeholder-text" id="placeholder">Select your parameters and click Simulate to render exact empirical bounds.</div>
+            <div class="spinner" id="spinner"></div>
+            <img src="" alt="Simulated Plot" class="plot-img" id="plotResult">
+            
+            <table class="alpha-table" id="alphaTable">
+                <thead>
+                    <tr>
+                        <th>Variant</th>
+                        <th>α₁ (Linear)</th>
+                        <th>α₂ (Quadratic)</th>
+                    </tr>
+                </thead>
+                <tbody id="alphaBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const schemeSelect = document.getElementById('scheme');
+        const h1Group = document.getElementById('h1_group');
+        const signalTypeSelect = document.getElementById('signal_type');
+        const audioFileGroup = document.getElementById('audio_file_group');
+        const form = document.getElementById('simForm');
+        const plotImg = document.getElementById('plotResult');
+        const spinner = document.getElementById('spinner');
+        const placeholder = document.getElementById('placeholder');
+        const simulateBtn = document.querySelector('.simulate-btn');
+
+        // Toggle h1 input based on scheme
+        schemeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'DPCM1-AQF') {
+                h1Group.style.display = 'flex';
+                h1Group.style.opacity = '1';
+                h1Group.style.height = 'auto';
+            } else {
+                h1Group.style.display = 'none';
+            }
+        });
+        // Run toggle on init
+        schemeSelect.dispatchEvent(new Event('change'));
+
+        // Toggle file input based on signal type
+        signalTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'upload') {
+                audioFileGroup.classList.add('active');
+            } else {
+                audioFileGroup.classList.remove('active');
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // UI States
+            simulateBtn.disabled = true;
+            simulateBtn.style.opacity = '0.7';
+            placeholder.style.display = 'none';
+            plotImg.style.display = 'none';
+            spinner.style.display = 'block';
+
+            const formData = new FormData(form);
+
+            // Fetch
+            try {
+                const response = await fetch('/api/simulate', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Simulation failed');
+                }
+
+                plotImg.src = data.plot_url;
+                plotImg.style.display = 'block';
+
+                // Render Alpha values 
+                if (data.alphas && data.alphas.length > 0) {
+                    const alphaBody = document.getElementById('alphaBody');
+                    alphaBody.innerHTML = '';
+                    data.alphas.forEach(alpha => {
+                        alphaBody.innerHTML += `
+                            <tr>
+                                <td>${alpha.variant}</td>
+                                <td>${alpha.a1.toFixed(4)}</td>
+                                <td>${alpha.a2.toFixed(4)}</td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('alphaTable').style.display = 'table';
+                }
+
+            } catch (error) {
+                alert('Error processing simulation: ' + error.message);
+                placeholder.style.display = 'block';
+                placeholder.textContent = 'Error: ' + error.message;
+            } finally {
+                spinner.style.display = 'none';
+                simulateBtn.disabled = false;
+                simulateBtn.style.opacity = '1';
+                simulateBtn.textContent = 'Simulate Channel & Plot SNR';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Flask Temporary Uploads
+tmp/
+
+# User Requested Ignores (Paper / Docs / Tests)
+docs/
+paper.pdf
+paper_text.txt
+read_pdf.py
+test_acf.py
