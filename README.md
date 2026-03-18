@@ -53,7 +53,7 @@ python app.py
 *Then navigate to `http://127.0.0.1:5000` via your web browser.*
 
 ### 2. General CLI Simulation
-Execute the entire sequence comparing all frameworks iteratively. If `--audio` is omitted, it will explicitly default to Noll's 1975 simulated Independent AR(1) mapping metric!
+Execute the entire sequence comparing all frameworks iteratively. If `--audio` is omitted, it will explicitly default to Noll's 1975 simulated Independent AR(1) mapping metric.
 ```bash
 python main.py --plot simulation --audio elephant.mp3 --duration 3.0
 ```
