@@ -158,3 +158,4 @@ def adpcm_aqf_encode_decode(signal, order=1, channel_func=None):
             dec_state[0] = rec
 
     return out
+

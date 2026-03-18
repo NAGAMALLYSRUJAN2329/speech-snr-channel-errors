@@ -91,3 +91,4 @@ if __name__ == "__main__":
     elif args.plot == "simulation":
         dur = None if args.duration <= 0 else args.duration
         plot_simulation(audio_file=args.audio, duration_sec=dur)
+

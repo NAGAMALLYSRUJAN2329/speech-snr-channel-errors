@@ -58,3 +58,4 @@ if __name__ == "__main__":
         snr_fbc_ep1 = compute_theoretical_snr(p, 'FBC', 1)
         snr_fbc_ep2 = compute_theoretical_snr(p, 'FBC', 2)
         print(f"P={p:.3f} | NBC: {snr_nbc:.2f} | FBC: {snr_fbc:.2f} | FBC-EP1: {snr_fbc_ep1:.2f} | FBC-EP2: {snr_fbc_ep2:.2f}")
+

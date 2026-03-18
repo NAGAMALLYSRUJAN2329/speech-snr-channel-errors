@@ -69,3 +69,4 @@ def run_simulation(p_error, code_type='FBC', ep_level=0, scheme='PCM', audio_fil
         raise ValueError(f"Unknown scheme {scheme}")
         
     return calculate_snr(signal, recon)
+

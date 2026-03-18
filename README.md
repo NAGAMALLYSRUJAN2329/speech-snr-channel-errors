@@ -65,3 +65,4 @@ Evaluate purely structural limits defining Folded-Binary vs Natural-Binary prote
 python main.py --plot theoretical
 ```
 > *Generates `plots/theoretical_snr.png`*
+

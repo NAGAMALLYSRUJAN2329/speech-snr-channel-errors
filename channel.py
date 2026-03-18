@@ -25,3 +25,4 @@ def apply_channel_errors(indices, p_error, code_type='FBC', ep_level=0):
                 break
                 
     return out_indices
+

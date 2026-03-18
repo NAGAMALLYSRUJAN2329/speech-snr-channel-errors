@@ -28,3 +28,4 @@ CODEWORDS_FBC = [
 
 # Supported simulation schemes
 SCHEMES = ['PCM', 'PCM-AQF', 'DPCM1-AQF', 'ADPCM1-AQF', 'ADPCM4-AQF']
+
