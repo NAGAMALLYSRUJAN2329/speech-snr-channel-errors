@@ -73,6 +73,7 @@
             letter-spacing: -1px;
             margin-bottom: 0.5rem;
             background: linear-gradient(to right, #fff, #cbd5e1);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -288,9 +289,25 @@
                 </select>
             </div>
 
+            <div class="input-group">
+                <label for="code_type">Channel Code Type</label>
+                <select id="code_type" name="code_type">
+                    <option value="FBC" selected>FBC (Folded Binary Code)</option>
+                    <option value="NBC">NBC (Natural Binary Code)</option>
+                </select>
+            </div>
+
             <div class="input-group" id="h1_group" style="display: none; transition: all 0.3s ease;">
                 <label for="h1_val">h1 Parameter (DPCM1-AQF only)</label>
                 <input type="text" id="h1_val" name="h1_val" value="0.85">
+            </div>
+
+            <div class="input-group">
+                <label for="error_type">Error Type</label>
+                <select id="error_type" name="error_type">
+                    <option value="independent" selected>Independent Errors (Memoryless)</option>
+                    <option value="burst">Burst Errors (Gilbert Model)</option>
+                </select>
             </div>
 
             <div class="input-group">
@@ -325,6 +342,15 @@
             </div>
 
             <div class="input-group">
+                <label>Plot Theoretical Bounds</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" name="plot_theo" value="true"> Include Theoretical Baseline
+                    </label>
+                </div>
+            </div>
+
+            <div class="input-group">
                 <label>Plot Error Protection (EP) Variations</label>
                 <div class="checkbox-group">
                     <label class="checkbox-wrapper">
@@ -339,13 +365,21 @@
                 </div>
             </div>
 
-            <button type="submit" class="simulate-btn">Simulate Channel & Plot SNR</button>
+            <input type="hidden" name="previous_lines" id="previous_lines" value="[]">
+            <input type="hidden" name="previous_alphas" id="previous_alphas" value="[]">
+            <input type="hidden" name="history_count" id="history_count" value="0">
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" id="btn-simulate" class="simulate-btn" style="flex: 1;">Simulate New Plot</button>
+                <button type="button" id="btn-add" class="simulate-btn" style="flex: 1; background: linear-gradient(135deg, var(--bg-gradient-2), var(--bg-gradient-3));">Add to Current Plot</button>
+            </div>
+            <button type="button" id="btn-clear" class="simulate-btn" style="width: 100%; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; display: none; margin-top: 0.5rem; margin-bottom: 0;">Clear Plot History</button>
         </form>
 
         <div class="plot-section">
             <div class="placeholder-text" id="placeholder">Select your parameters and click Simulate to render exact empirical bounds.</div>
             <div class="spinner" id="spinner"></div>
-            <img src="" alt="Simulated Plot" class="plot-img" id="plotResult">
+            <img src="" alt="Simulated Plot" class="plot-img" id="plotResult" style="background: white;">
+            <button type="button" id="btn-download" class="simulate-btn" style="width: 100%; max-width: 300px; background: #10b981; display: none; margin-top: 1rem; padding: 0.75rem;">Download Plot Image</button>
             
             <table class="alpha-table" id="alphaTable">
                 <thead>
@@ -357,6 +391,9 @@
                 </thead>
                 <tbody id="alphaBody"></tbody>
             </table>
+
+            <img src="" alt="Alpha Parameters Plot" class="plot-img" id="alphaPlotResult" style="background: white; margin-top: 1.5rem; max-width: 100%;">
+            <button type="button" id="btn-download-alpha" class="simulate-btn" style="width: 100%; max-width: 300px; background: #3b82f6; display: none; margin-top: 1rem; padding: 0.75rem;">Download Alpha Plot</button>
         </div>
     </div>
 
@@ -369,7 +406,34 @@
         const plotImg = document.getElementById('plotResult');
         const spinner = document.getElementById('spinner');
         const placeholder = document.getElementById('placeholder');
-        const simulateBtn = document.querySelector('.simulate-btn');
+
+        const prevLinesInput = document.getElementById('previous_lines');
+        const prevAlphasInput = document.getElementById('previous_alphas');
+        const historyCountInput = document.getElementById('history_count');
+        const btnAdd = document.getElementById('btn-add');
+        const btnClear = document.getElementById('btn-clear');
+        const btnSimulate = document.getElementById('btn-simulate');
+        const btnDownload = document.getElementById('btn-download');
+        const btnDownloadAlpha = document.getElementById('btn-download-alpha');
+        const alphaPlotImg = document.getElementById('alphaPlotResult');
+
+        btnDownload.addEventListener('click', () => {
+            if (plotImg.src) {
+                const a = document.createElement('a');
+                a.href = plotImg.src;
+                a.download = 'simulated_snr_plot.png';
+                a.click();
+            }
+        });
+
+        btnDownloadAlpha.addEventListener('click', () => {
+            if (alphaPlotImg.src) {
+                const a = document.createElement('a');
+                a.href = alphaPlotImg.src;
+                a.download = 'alpha_parameters_plot.png';
+                a.click();
+            }
+        });
 
         // Toggle h1 input based on scheme
         schemeSelect.addEventListener('change', (e) => {
@@ -393,13 +457,41 @@
             }
         });
 
+        let isAdding = false;
+
+        btnAdd.addEventListener('click', () => {
+            isAdding = true;
+            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        });
+
+        btnClear.addEventListener('click', () => {
+            prevLinesInput.value = "[]";
+            prevAlphasInput.value = "[]";
+            historyCountInput.value = "0";
+            btnClear.style.display = 'none';
+            btnDownload.style.display = 'none';
+            btnDownloadAlpha.style.display = 'none';
+            plotImg.style.display = 'none';
+            alphaPlotImg.style.display = 'none';
+            document.getElementById('alphaTable').style.display = 'none';
+            placeholder.style.display = 'block';
+            placeholder.textContent = 'Plot cleared. Ready for new simulation.';
+        });
+
         // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            if (!isAdding) {
+                prevLinesInput.value = "[]";
+                prevAlphasInput.value = "[]";
+                historyCountInput.value = "0";
+            }
+            isAdding = false;
+            
             // UI States
-            simulateBtn.disabled = true;
-            simulateBtn.style.opacity = '0.7';
+            btnSimulate.disabled = true;
+            btnAdd.disabled = true;
             placeholder.style.display = 'none';
             plotImg.style.display = 'none';
             spinner.style.display = 'block';
@@ -420,6 +512,21 @@
 
                 plotImg.src = data.plot_url;
                 plotImg.style.display = 'block';
+                btnDownload.style.display = 'block';
+                
+                // Store accumulated state
+                if (data.lines) {
+                    prevLinesInput.value = JSON.stringify(data.lines);
+                }
+                if (data.alphas) {
+                    prevAlphasInput.value = JSON.stringify(data.alphas);
+                }
+                historyCountInput.value = (parseInt(historyCountInput.value) + 1).toString();
+                
+                // Show clear button
+                if (data.lines && data.lines.length > 0) {
+                    btnClear.style.display = 'block';
+                }
 
                 // Render Alpha values 
                 if (data.alphas && data.alphas.length > 0) {
@@ -437,15 +544,23 @@
                     document.getElementById('alphaTable').style.display = 'table';
                 }
 
+                if (data.alpha_plot_url) {
+                    alphaPlotImg.src = data.alpha_plot_url;
+                    alphaPlotImg.style.display = 'block';
+                    btnDownloadAlpha.style.display = 'block';
+                } else {
+                    alphaPlotImg.style.display = 'none';
+                    btnDownloadAlpha.style.display = 'none';
+                }
+
             } catch (error) {
                 alert('Error processing simulation: ' + error.message);
                 placeholder.style.display = 'block';
                 placeholder.textContent = 'Error: ' + error.message;
             } finally {
                 spinner.style.display = 'none';
-                simulateBtn.disabled = false;
-                simulateBtn.style.opacity = '1';
-                simulateBtn.textContent = 'Simulate Channel & Plot SNR';
+                btnSimulate.disabled = false;
+                btnAdd.disabled = false;
             }
         });
     </script>

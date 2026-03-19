@@ -2,26 +2,17 @@ import numpy as np
 import scipy.linalg
 from constants import V_LEVELS, U_BOUNDS_ENCODER
 
-def quantize_gaussian(val):
-    for i, u in enumerate(U_BOUNDS_ENCODER):
-        if val <= u:
-            return i
-    return 7
+import bisect
 
 def pcm_encode(signal, var=1.0):
     std = np.sqrt(var)
-    indices = np.zeros(len(signal), dtype=int)
-    for i, x in enumerate(signal):
-        norm_x = x / std
-        indices[i] = quantize_gaussian(norm_x)
-    return indices
+    norm_x = signal / std
+    return np.searchsorted(U_BOUNDS_ENCODER, norm_x)
 
 def pcm_decode(indices, var=1.0):
     std = np.sqrt(var)
-    out = np.zeros(len(indices))
-    for i, idx in enumerate(indices):
-        out[i] = V_LEVELS[idx] * std
-    return out
+    v_levels = np.array(V_LEVELS)
+    return v_levels[indices] * std
 
 def pcm_aqf_encode(signal):
     block_size = 32
@@ -30,24 +21,23 @@ def pcm_aqf_encode(signal):
     
     for b in range(0, len(signal), block_size):
         block = signal[b:b+block_size]
-        # Max value mapped to standard deviation
         max_val = np.max(np.abs(block))
         g = max_val / 2.5 if max_val > 1e-4 else 1e-4   
         gains[b // block_size] = g
         
-        for i, x in enumerate(block):
-            indices[b+i] = quantize_gaussian(x / g)
+        indices[b:b+len(block)] = np.searchsorted(U_BOUNDS_ENCODER, block / g)
 
     return indices, gains
 
 def pcm_aqf_decode(indices, gains):
     block_size = 32
     out = np.zeros(len(indices))
+    v_levels = np.array(V_LEVELS)
     
     for b in range(0, len(indices), block_size):
         g = gains[b // block_size]
-        for i in range(min(block_size, len(indices) - b)):
-            out[b+i] = V_LEVELS[indices[b+i]] * g
+        n_elem = min(block_size, len(indices) - b)
+        out[b:b+n_elem] = v_levels[indices[b:b+n_elem]] * g
             
     return out
 
@@ -85,7 +75,7 @@ def dpcm1_aqf_encode_decode(signal, h1=0.85, channel_func=None):
             x = signal[b+i]
             pred = h1 * enc_state
             diff = x - pred
-            idx = quantize_gaussian(diff / g)
+            idx = bisect.bisect_left(U_BOUNDS_ENCODER, diff / g)
             indices[b+i] = idx
             enc_state = pred + V_LEVELS[idx] * g
 
@@ -122,7 +112,8 @@ def adpcm_aqf_encode_decode(signal, order=1, channel_func=None):
         for i, x in enumerate(block):
             pred = np.dot(h, state)
             diffs[i] = x - pred
-            state = np.roll(state, 1)
+            for k in range(order-1, 0, -1):
+                state[k] = state[k-1]
             state[0] = x
             
         std_est = np.std(diffs)
@@ -136,10 +127,11 @@ def adpcm_aqf_encode_decode(signal, order=1, channel_func=None):
             x = signal[b+i]
             pred = np.dot(h, enc_state)
             diff = x - pred
-            idx = quantize_gaussian(diff / g)
+            idx = bisect.bisect_left(U_BOUNDS_ENCODER, diff / g)
             indices[b+i] = idx
             rec = pred + V_LEVELS[idx] * g
-            enc_state = np.roll(enc_state, 1)
+            for k in range(order-1, 0, -1):
+                enc_state[k] = enc_state[k-1]
             enc_state[0] = rec
 
     rx_indices = channel_func(indices) if channel_func else indices
@@ -154,7 +146,8 @@ def adpcm_aqf_encode_decode(signal, order=1, channel_func=None):
             pred = np.dot(h, dec_state)
             rec = pred + V_LEVELS[idx] * g
             out[b+i] = rec
-            dec_state = np.roll(dec_state, 1)
+            for k in range(order-1, 0, -1):
+                dec_state[k] = dec_state[k-1]
             dec_state[0] = rec
 
     return out

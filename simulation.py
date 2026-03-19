@@ -41,7 +41,7 @@ def load_audio_signal(filepath, sr=8000, duration_sec=None):
         signal = signal / std
     return signal
 
-def run_simulation(p_error, code_type='FBC', ep_level=0, scheme='PCM', audio_file=None, h1=0.85, duration_sec=2.0):
+def run_simulation(p_error, code_type='FBC', ep_level=0, scheme='PCM', audio_file=None, h1=0.85, duration_sec=2.0, error_type='independent'):
     if audio_file:
         signal = load_audio_signal(audio_file, sr=8000, duration_sec=duration_sec)
     else:
@@ -49,7 +49,7 @@ def run_simulation(p_error, code_type='FBC', ep_level=0, scheme='PCM', audio_fil
         signal = generate_ar1_signal(length=length)
     
     def channel_func(indices):
-        return apply_channel_errors(indices, p_error, code_type, ep_level)
+        return apply_channel_errors(indices, p_error, code_type, ep_level, error_type)
 
     if scheme == 'PCM':
         indices = pcm_encode(signal, var=1.0)
